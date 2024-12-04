@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     ArtistListCreateView,
     ArtistRetrieveUpdateDestroyView,
@@ -9,8 +9,14 @@ from .views import (
     ContributionsView,
     GenreListView,
     GenreRetrieveUpdateDestroyView,
-    CommentListCreateView
+    CommentListCreateView,
+    ProfileDetail,
+    ProfileViewSet
 )
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'profiles', ProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('artists/', ArtistListCreateView.as_view(), name='artist_list'),
@@ -27,4 +33,6 @@ urlpatterns = [
         CommentListCreateView.as_view(),
         name='comment-list-create'
     ),
+    path('api/profiles/<str:username>/', ProfileDetail.as_view(), name='profile-detail'),
+    path('', include(router.urls)),
 ]

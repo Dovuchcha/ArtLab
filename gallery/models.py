@@ -1,7 +1,13 @@
 from django.db import models
 from django.utils.timezone import now
 
-# Create your models here.
+class Profile(models.Model):
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return self.username
+
 class Genre(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -84,9 +90,15 @@ class Comment(models.Model):
     )
     content = models.TextField()
     timestamp = models.DateTimeField(default=now)
+    owner = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_DEFAULT,
+        default=1,
+        related_name='comments'
+    )
 
     def __str__(self):
-        return f'Comment by Anonymous on {self.art_piece.title} at {self.timestamp}'
+        return f'Comment by {self.owner.username} on {self.art_piece.title} at {self.timestamp}'
 
     class Meta:
         ordering = ['timestamp']

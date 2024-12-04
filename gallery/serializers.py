@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Artist, ArtPiece, Genre, Comment
+from .models import Artist, ArtPiece, Genre, Comment, Profile
 
 class ArtistSerializer(serializers.ModelSerializer):
     is_deceased = serializers.SerializerMethodField()
@@ -39,10 +39,48 @@ class RecursiveField(serializers.Serializer):
         serializer = self.parent.parent.__class__(value, context=self.context)
         return serializer.data
 
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['id', 'username', 'email']
+        read_only_fields = ['id']
+    
+    def validate_username(self, value):
+        """
+        Ensure that the username is alphanumeric and between 3 to 150 characters.
+        """
+        if not value.isalnum():
+            raise serializers.ValidationError("Username must be alphanumeric.")
+        if not (3 <= len(value) <= 150):
+            raise serializers.ValidationError("Username must be between 3 and 150 characters long.")
+        return value
+    
+    def validate_email(self, value):
+        """
+        Ensure that the email has a valid format and is unique.
+        """
+        if Profile.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+    
 class CommentSerializer(serializers.ModelSerializer):
     replies = RecursiveField(many=True, read_only=True)
 
     class Meta:
         model = Comment
-        fields = ['id', 'art_piece', 'parent', 'content', 'timestamp', 'replies']
+        fields = ['id', 'art_piece', 'parent', 'content', 'timestamp', 'replies', 'owner']
         read_only_fields = ['id', 'timestamp', 'replies']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Include detailed owner information
+        owner = instance.owner
+        representation['owner'] = {
+            'id': owner.id,
+            'username': owner.username,
+            'email': owner.email
+        }
+
+        return representation

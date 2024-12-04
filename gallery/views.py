@@ -1,10 +1,12 @@
 from rest_framework import generics
 from .models import Artist, ArtPiece, Genre, Comment
-from .serializers import ArtistSerializer, ArtPieceSerializer, CommentSerializer, GenreSerializer
-from .models import Artist, ArtPiece
+from .serializers import ArtistSerializer, ArtPieceSerializer, CommentSerializer, GenreSerializer, ProfileSerializer
+from .models import Artist, ArtPiece, Profile
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework import viewsets
+from rest_framework import status
 
 class ArtistListCreateView(generics.ListCreateAPIView):
     queryset = Artist.objects.filter(is_verified=True)
@@ -85,3 +87,35 @@ class CommentListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         art_piece_id = self.kwargs['art_piece_id']
         serializer.save(art_piece_id=art_piece_id)
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    serializer_class = ProfileSerializer
+    queryset = Profile.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+class ProfileDetail(APIView):
+    
+    def get_object(self, username):
+        try:
+            return Profile.objects.get(username=username)
+        except Profile.DoesNotExist:
+            return None
+    
+    def get(self, request, username, format=None):
+        profile = self.get_object(username)
+        if profile is None:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data)
+    
+    def put(self, request, username, format=None):
+        profile = self.get_object(username)
+        if profile is None:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
