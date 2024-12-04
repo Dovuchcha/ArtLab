@@ -16,6 +16,7 @@ class Artist(models.Model):
         ('Renaissance', 'Renaissance'),
         ('Baroque', 'Baroque'),
         ('Realism', 'Realism'),
+        ('Symbolism', 'Symbolism')
     ]
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
