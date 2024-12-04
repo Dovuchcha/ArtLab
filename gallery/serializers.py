@@ -75,7 +75,6 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Include detailed owner information
         owner = instance.owner
         representation['owner'] = {
             'id': owner.id,
