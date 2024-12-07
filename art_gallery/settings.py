@@ -32,6 +32,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'gallery.middleware.cors_middleware.AddCORSHeadersToMedia',
 ]
 
 ROOT_URLCONF = "art_gallery.urls"
