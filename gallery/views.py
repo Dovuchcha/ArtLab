@@ -8,24 +8,35 @@ from rest_framework.permissions import AllowAny
 from rest_framework import viewsets
 from rest_framework import status
 import requests
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, FileResponse
 from django.conf import settings
+import os
+
 
 def proxy_media(request, path):
     if not settings.MEDIA_URL.startswith(('http://', 'https://')):
-        media_url = f'{request.scheme}://{request.get_host()}{settings.MEDIA_URL}{path}'
+        file_path = os.path.join(settings.MEDIA_ROOT, path)
+        if not os.path.exists(file_path):
+            raise Http404("Media not found")
+
+        response = FileResponse(open(file_path, 'rb'))
+        response['Access-Control-Allow-Origin'] = '*'
+        return response
     else:
         media_url = f'{settings.MEDIA_URL}{path}'
-    
-    try:
-        response = requests.get(media_url, stream=True)
-        response.raise_for_status() 
-    except requests.exceptions.RequestException as e:
-        raise Http404(f"Media not found: {e}")
-    
-    django_response = HttpResponse(response.content, content_type=response.headers.get('Content-Type'))
-    django_response['Access-Control-Allow-Origin'] = '*'
-    return django_response
+        
+        try:
+            r = requests.get(media_url, stream=True)
+            r.raise_for_status()
+        except requests.exceptions.RequestException:
+            raise Http404("Media not found")
+        
+        django_response = HttpResponse(
+            r.content, 
+            content_type=r.headers.get('Content-Type', 'application/octet-stream')
+        )
+        django_response['Access-Control-Allow-Origin'] = '*'
+        return django_response
 
 class ArtistListCreateView(generics.ListCreateAPIView):
     queryset = Artist.objects.filter(is_verified=True)
