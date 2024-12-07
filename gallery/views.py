@@ -8,13 +8,22 @@ from rest_framework.permissions import AllowAny
 from rest_framework import viewsets
 from rest_framework import status
 import requests
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.conf import settings
 
 def proxy_media(request, path):
-    media_url = f'{settings.MEDIA_URL}{path}'
-    response = requests.get(media_url, stream=True)
-    django_response = HttpResponse(response.content, content_type=response.headers['Content-Type'])
+    if not settings.MEDIA_URL.startswith(('http://', 'https://')):
+        media_url = f'{request.scheme}://{request.get_host()}{settings.MEDIA_URL}{path}'
+    else:
+        media_url = f'{settings.MEDIA_URL}{path}'
+    
+    try:
+        response = requests.get(media_url, stream=True)
+        response.raise_for_status() 
+    except requests.exceptions.RequestException as e:
+        raise Http404(f"Media not found: {e}")
+    
+    django_response = HttpResponse(response.content, content_type=response.headers.get('Content-Type'))
     django_response['Access-Control-Allow-Origin'] = '*'
     return django_response
 
