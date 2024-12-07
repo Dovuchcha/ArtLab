@@ -7,6 +7,16 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework import viewsets
 from rest_framework import status
+import requests
+from django.http import HttpResponse
+from django.conf import settings
+
+def proxy_media(request, path):
+    media_url = f'{settings.MEDIA_URL}{path}'
+    response = requests.get(media_url, stream=True)
+    django_response = HttpResponse(response.content, content_type=response.headers['Content-Type'])
+    django_response['Access-Control-Allow-Origin'] = '*'
+    return django_response
 
 class ArtistListCreateView(generics.ListCreateAPIView):
     queryset = Artist.objects.filter(is_verified=True)
@@ -119,3 +129,4 @@ class ProfileDetail(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    

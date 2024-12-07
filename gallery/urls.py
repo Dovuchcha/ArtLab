@@ -11,7 +11,8 @@ from .views import (
     GenreRetrieveUpdateDestroyView,
     CommentListCreateView,
     ProfileDetail,
-    ProfileViewSet
+    ProfileViewSet,
+    proxy_media
 )
 from rest_framework.routers import DefaultRouter
 
@@ -35,4 +36,5 @@ urlpatterns = [
     ),
     path('api/profiles/<str:username>/', ProfileDetail.as_view(), name='profile-detail'),
     path('', include(router.urls)),
+    path('proxy-media/<path:path>/', proxy_media, name='proxy_media'),
 ]
